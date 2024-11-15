@@ -2,11 +2,8 @@ from flask import Flask, jsonify
 import random
 import string
 import requests
-from telegram import Bot
-from telegram.constants import ParseMode
-import asyncio
-import threading
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 # Initialize Flask app
@@ -14,23 +11,27 @@ app = Flask(__name__)
 
 # Telegram Bot setup
 TELEGRAM_BOT_TOKEN = '7853203368:AAE801naC4GMeyrkEfyflPItRwMvLmQddPY'
-CHANNEL_CHAT_ID = '-1002478793346'  # Replace with your channel ID or username
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+CHANNEL_CHAT_ID = '-1002478793346'  # Replace with your channel ID
+API_URL = "https://api.telegram.org/bot{}/sendMessage".format(TELEGRAM_BOT_TOKEN)
 
 # Variables to track token checks
 tokens_checked = 0
 batches_found = 0
 
-# Async function to send a message to the Telegram channel
-async def send_to_telegram_async(message):
+# Function to send a message to the Telegram channel synchronously using requests
+def send_to_telegram(message):
     try:
-        await bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message, parse_mode=ParseMode.HTML)
+        data = {
+            'chat_id': CHANNEL_CHAT_ID,
+            'text': message
+        }
+        response = requests.post(API_URL, data=data)
+        if response.status_code != 200:
+            print(f"Failed to send message: {response.status_code}")
+        else:
+            print("Message sent successfully")
     except Exception as e:
         print(f"Error sending message to Telegram: {e}")
-
-# Wrapper to call async function in a sync context
-def send_to_telegram(message):
-    asyncio.run(send_to_telegram_async(message))
 
 # Function to generate a random 40-character token
 def generate_random_token():
@@ -74,7 +75,7 @@ def send_startup_message():
     message = "The bot has started successfully and is now monitoring tokens."
     send_to_telegram(message)
 
-# Function to check tokens in batches of 50 per second
+# Function to check tokens in batches of 50 per second (infinite loop)
 def check_tokens():
     global tokens_checked
     while True:
