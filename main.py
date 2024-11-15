@@ -60,6 +60,11 @@ def send_to_telegram(token, batch_name, batch_id):
     message = f"Token: {token}\n{batch_name} - {batch_id}"
     bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message)
 
+# Function to send a startup message to the Telegram channel
+def send_startup_message():
+    message = "The bot has started successfully and is now monitoring tokens."
+    bot.send_message(chat_id=CHANNEL_CHAT_ID, text=message)
+
 # Function to check tokens in batches of 50 per second
 def check_tokens():
     global tokens_checked
@@ -89,5 +94,9 @@ def info():
 if __name__ == '__main__':
     # Start the background thread for token checking
     threading.Thread(target=check_tokens, daemon=True).start()
+
+    # Send startup message to Telegram
+    send_startup_message()
+
     # Run the Flask app
     app.run(host='0.0.0.0', port=8080)
